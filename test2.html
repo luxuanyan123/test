@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务管理应用 - 鸡你太美</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 重置默认样式，设置全局字体 */
+        * {
+            margin: 0;                    /* 清除所有元素的外边距 */
+            padding: 0;                   /* 清除所有元素的内边距 */
+            box-sizing: border-box;       /* 设置盒模型为边框盒模型 */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* 设置全局字体 */
+        }
+        
+        /* 页面主体背景设置 */
+        body {
+            background: linear-gradient(135deg, #8a2be2, #4169e1); /* 设置背景为135度角的紫色到蓝色渐变 */
+            min-height: 100vh;            /* 最小高度为视窗高度 */
+            padding: 20px;                /* 设置内边距为20px */
+            display: flex;                /* 使用弹性布局 */
+            justify-content: center;      /* 水平居中 */
+            align-items: flex-start;      /* 垂直方向从顶部开始对齐 */
+            color: #333;                  /* 设置文字颜色为深灰色 */
+        }
+        
+        /* 待办事项应用容器样式 */
+        .todo_app {
+            background-color: rgba(255, 255, 255, 0.95); /* 设置半透明白色背景 */
+            width: 100%;                  /* 宽度占父元素100% */
+            max-width: 800px;             /* 最大宽度为800px */
+            border-radius: 20px;          /* 设置圆角边框 */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2); /* 添加阴影效果 */
+            overflow: hidden;             /* 隐藏超出部分 */
+            margin-top: 40px;             /* 上边距40px */
+            backdrop-filter: blur(10px);  /* 背景模糊效果 */
+            border: 1px solid rgba(255, 255, 255, 0.3); /* 添加半透明白色边框 */
+        }
+        
+        /* 应用头部样式 */
+        .app-header {
+            background: linear-gradient(135deg, #6a11cb, #2575fc); /* 设置头部背景渐变色 */
+            padding: 25px 30px;           /* 设置内边距 */
+            text-align: center;           /* 文字居中对齐 */
+            color: white;                 /* 文字颜色为白色 */
+            position: relative;           /* 相对定位 */
+            overflow: hidden;             /* 隐藏超出部分 */
+        }
+        
+        /* 头部装饰元素 */
+        .app-header::before {
+            content: "";                  /* 伪元素内容为空 */
+            position: absolute;           /* 绝对定位 */
+            top: -50%;                    /* 距离顶部-50% */
+            left: -50%;                   /* 距离左侧-50% */
+            width: 200%;                  /* 宽度为父元素的200% */
+            height: 200%;                 /* 高度为父元素的200% */
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); /* 径向渐变背景 */
+            transform: rotate(30deg);     /* 旋转30度 */
+        }
+        
+        /* 标题样式 */
+        .title {
+            font-size: 2.8rem;            /* 字体大小 */
+            font-weight: 800;             /* 字体粗细 */
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2); /* 文字阴影 */
+            position: relative;           /* 相对定位 */
+            letter-spacing: 2px;          /* 字母间距 */
+            margin-bottom: 10px;          /* 下边距 */
+        }
+        
+        /* 副标题样式 */
+        .subtitle {
+            font-size: 1.1rem;            /* 字体大小 */
+            opacity: 0.9;                 /* 透明度 */
+            font-weight: 300;             /* 字体粗细 */
+            position: relative;           /* 相对定位 */
+        }
+        
+        /* 应用内容区域样式 */
+        .app-content {
+            padding: 30px;                /* 内边距 */
+        }
+        
+        /* 输入区域样式 */
+        .input-section {
+            display: flex;                /* 弹性布局 */
+            gap: 15px;                    /* 元素间距 */
+            margin-bottom: 30px;          /* 下边距 */
+        }
+        
+        /* 任务输入框样式 */
+        .task-input {
+            flex: 1;                      /* 占据剩余空间 */
+            padding: 16px 20px;           /* 内边距 */
+            border: none;                 /* 无边框 */
+            border-radius: 50px;          /* 圆角 */
+            font-size: 1.1rem;            /* 字体大小 */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* 阴影 */
+            transition: all 0.3s ease;    /* 过渡动画 */
+        }
+        
+        /* 输入框聚焦状态 */
+        .task-input:focus {
+            outline: none;                /* 无轮廓 */
+            box-shadow: 0 5px 20px rgba(106, 17, 203, 0.3); /* 更明显的阴影 */
+            transform: translateY(-2px);  /* 向上移动2px */
+        }
+        
+        /* 添加按钮样式 */
+        .add-btn {
+            background: linear-gradient(135deg, #6a11cb, #2575fc); /* 渐变背景 */
+            color: white;                 /* 文字颜色 */
+            border: none;                 /* 无边框 */
+            width: 60px;                  /* 宽度 */
+            height: 60px;                 /* 高度 */
+            border-radius: 50%;           /* 圆形 */
+            cursor: pointer;              /* 鼠标指针样式 */
+            font-size: 1.8rem;            /* 字体大小 */
+            display: flex;                /* 弹性布局 */
+            align-items: center;          /* 垂直居中 */
+            justify-content: center;      /* 水平居中 */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* 阴影 */
+            transition: all 0.3s ease;    /* 过渡动画 */
+        }
+        
+        /* 添加按钮悬停状态 */
+        .add-btn:hover {
+            transform: scale(1.05) rotate(90deg); /* 缩放并旋转 */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* 更明显的阴影 */
+        }
+        
+        /* 控制区域样式 */
+        .controls {
+            display: flex;                /* 弹性布局 */
+            justify-content: space-between; /* 两端对齐 */
+            margin-bottom: 25px;          /* 下边距 */
+            padding-bottom: 15px;         /* 下内边距 */
+            border-bottom: 2px solid #f0f0f0; /* 底部边框 */
+        }
+        
+        /* 筛选按钮样式 */
+        .filter-btn {
+            background: #f0f0f0;          /* 背景色 */
+            border: none;                 /* 无边框 */
+            padding: 10px 20px;           /* 内边距 */
+            border-radius: 30px;          /* 圆角 */
+            font-size: 1rem;              /* 字体大小 */
+            font-weight: 600;             /* 字体粗细 */
+            cursor: pointer;              /* 鼠标指针样式 */
+            transition: all 0.3s ease;    /* 过渡动画 */
+        }
+        
+        /* 激活状态的筛选按钮 */
+        .filter-btn.active {
+            background: linear-gradient(135deg, #6a11cb, #2575fc); /* 渐变背景 */
+            color: white;                 /* 文字颜色 */
+        }
+        
+        /* 筛选按钮悬停状态（非激活状态） */
+        .filter-btn:hover:not(.active) {
+            background: #e0e0e0;          /* 背景色 */
+        }
+        
+        /* 清除按钮样式 */
+        .clear-btn {
+            background: #ff6b6b;          /* 背景色 */
+            color: white;                 /* 文字颜色 */
+            border: none;                 /* 无边框 */
+            padding: 10px 20px;           /* 内边距 */
+            border-radius: 30px;          /* 圆角 */
+            font-size: 1rem;              /* 字体大小 */
+            font-weight: 600;             /* 字体粗细 */
+            cursor: pointer;              /* 鼠标指针样式 */
+            transition: all 0.3s ease;    /* 过渡动画 */
+        }
+        
+        /* 清除按钮悬停状态 */
+        .clear-btn:hover {
+            background: #ff5252;          /* 背景色 */
+            transform: translateY(-2px);  /* 向上移动 */
+            box-shadow: 0 5px 10px rgba(255, 82, 82, 0.3); /* 阴影 */
+        }
+        
+        /* 任务列表样式 */
+        .task-list {
+            list-style: none;             /* 无列表样式 */
+        }
+        
+        /* 任务项样式 */
+        .task-item {
+            background: white;            /* 背景色 */
+            border-radius: 15px;          /* 圆角 */
+            padding: 20px;                /* 内边距 */
+            margin-bottom: 15px;          /* 下边距 */
+            display: flex;                /* 弹性布局 */
+            align-items: center;          /* 垂直居中 */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05); /* 阴影 */
+            animation: fadeIn 0.5s ease;  /* 淡入动画 */
+            transition: all 0.3s ease;    /* 过渡动画 */
+            border-left: 4px solid #6a11cb; /* 左边框 */
+        }
+        
+        /* 已完成任务项样式 */
+        .task-item.completed {
+            border-left-color: #4cd964;   /* 左边框颜色 */
+            opacity: 0.7;                 /* 透明度 */
+        }
+        
+        /* 已完成任务文字样式 */
+        .task-item.completed .task-text {
+            text-decoration: line-through; /* 文字删除线 */
+            color: #888;                  /* 文字颜色 */
+        }
+        
+        /* 任务复选框样式 */
+        .task-checkbox {
+            width: 25px;                  /* 宽度 */
+            height: 25px;                 /* 高度 */
+            border-radius: 50%;           /* 圆形 */
+            border: 2px solid #ddd;       /* 边框 */
+            margin-right: 15px;           /* 右边距 */
+            cursor: pointer;              /* 鼠标指针样式 */
+            display: flex;                /* 弹性布局 */
+            align-items: center;          /* 垂直居中 */
+            justify-content: center;      /* 水平居中 */
+            transition: all 0.2s ease;    /* 过渡动画 */
+        }
+        
+        /* 已选中复选框样式 */
+        .task-checkbox.checked {
+            background: #4cd964;          /* 背景色 */
+            border-color: #4cd964;        /* 边框颜色 */
+        }
+        
+        /* 已选中复选框内容 */
+        .task-checkbox.checked::after {
+            content: "✓";                 /* 显示对勾符号 */
+            color: white;                 /* 文字颜色 */
+            font-size: 14px;              /* 字体大小 */
+        }
+        
+        /* 任务文字样式 */
+        .task-text {
+            flex: 1;                      /* 占据剩余空间 */
+            font-size: 1.2rem;            /* 字体大小 */
+            word-break: break-word;       /* 自动换行 */
+        }
+        
+        /* 任务操作按钮容器 */
+        .task-actions {
+            display: flex;                /* 弹性布局 */
+            gap: 10px;                    /* 元素间距 */
+        }
+        
+        /* 任务按钮样式 */
+        .task-btn {
+            background: #f0f0f0;          /* 背景色 */
+            border: none;                 /* 无边框 */
+            width: 36px;                  /* 宽度 */
+            height: 36px;                 /* 高度 */
+            border-radius: 50%;           /* 圆形 */
+            display: flex;                /* 弹性布局 */
+            align-items: center;          /* 垂直居中 */
+            justify-content: center;      /* 水平居中 */
+            cursor: pointer;              /* 鼠标指针样式 */
+            transition: all 0.2s ease;    /* 过渡动画 */
+        }
+        
+        /* 编辑按钮悬停状态 */
+        .edit-btn:hover {
+            background: #6a11cb;          /* 背景色 */
+            color: white;                 /* 文字颜色 */
+        }
+        
+        /* 删除按钮悬停状态 */
+        .delete-btn:hover {
+            background: #ff6b6b;          /* 背景色 */
+            color: white;                 /* 文字颜色 */
+        }
+        
+        /* 统计信息样式 */
+        .stats {
+            display: flex;                /* 弹性布局 */
+            justify-content: space-between; /* 两端对齐 */
+            margin-top: 25px;             /* 上边距 */
+            padding-top: 15px;            /* 上内边距 */
+            border-top: 2px solid #f0f0f0; /* 顶部边框 */
+            font-size: 1.1rem;            /* 字体大小 */
+            font-weight: 500;             /* 字体粗细 */
+            color: #666;                  /* 文字颜色 */
+        }
+        
+        /* 空状态样式 */
+        .empty-state {
+            text-align: center;           /* 文字居中 */
+            padding: 40px 0;              /* 内边距 */
+            color: #888;                  /* 文字颜色 */
+        }
+        
+        /* 空状态图标样式 */
+        .empty-state i {
+            font-size: 4rem;              /* 字体大小 */
+            margin-bottom: 20px;          /* 下边距 */
+            color: #ddd;                  /* 文字颜色 */
+        }
+        
+        /* 空状态文字样式 */
+        .empty-state p {
+            font-size: 1.2rem;            /* 字体大小 */
+        }
+        
+        /* 淡入动画定义 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); } /* 初始状态 */
+            to { opacity: 1; transform: translateY(0); }      /* 结束状态 */
+        }
+        
+        /* 媒体查询 - 移动端适配 */
+        @media (max-width: 600px) {
+            .title {
+                font-size: 2.2rem;        /* 标题字体大小 */
+            }
+            
+            .input-section {
+                flex-direction: column;   /* 垂直排列 */
+            }
+            
+            .add-btn {
+                width: 100%;              /* 宽度100% */
+                border-radius: 50px;      /* 圆角 */
+                height: 50px;             /* 高度 */
+            }
+            
+            .controls {
+                flex-direction: column;   /* 垂直排列 */
+                gap: 10px;                /* 元素间距 */
+            }
+            
+            .task-item {
+                flex-direction: column;   /* 垂直排列 */
+                align-items: flex-start;  /* 左对齐 */
+            }
+            
+            .task-checkbox {
+                margin-bottom: 10px;      /* 下边距 */
+            }
+            
+            .task-actions {
+                margin-top: 15px;         /* 上边距 */
+                width: 100%;              /* 宽度100% */
+                justify-content: flex-end; /* 右对齐 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主容器：包含整个待办事项应用 -->
+    <div class="todo_app">
+        <!-- 应用头部区域 -->
+        <div class="app-header">
+            <!-- 主标题：显示应用名称"鸡你太美" -->
+            <div class="title">鸡你太美</div>
+            <!-- 副标题：显示应用描述信息 -->
+            <div class="subtitle">任务管理应用 - 保持高效每一天</div>
+        </div>
+        
+        <!-- 应用主要内容区域 -->
+        <div class="app-content">
+            <!-- 输入区域：用于添加新任务 -->
+            <div class="input-section">
+                <!-- 任务输入框：用户在此输入新任务 -->
+                <input type="text" class="task-input" placeholder="添加新任务...">
+                <!-- 添加按钮：点击添加新任务 -->
+                <button class="add-btn"><i class="fas fa-plus"></i></button>
+            </div>
+            
+            <!-- 控制区域：包含筛选和清除功能 -->
+            <div class="controls">
+                <!-- 筛选按钮容器 -->
+                <div class="filter-buttons">
+                    <!-- 显示所有任务的筛选按钮，默认激活状态 -->
+                    <button class="filter-btn active">所有任务</button>
+                    <!-- 显示未完成任务的筛选按钮 -->
+                    <button class="filter-btn">待完成</button>
+                    <!-- 显示已完成任务的筛选按钮 -->
+                    <button class="filter-btn">已完成</button>
+                </div>
+                <!-- 清除已完成任务的按钮 -->
+                <button class="clear-btn">清除已完成</button>
+            </div>
+            
+            <!-- 任务列表容器 -->
+            <ul class="task-list">
+                <!-- 单个任务项示例 -->
+                <li class="task-item">
+                    <!-- 任务复选框：用于标记任务完成状态 -->
+                    <div class="task-checkbox"></div>
+                    <!-- 任务文本内容 -->
+                    <div class="task-text">学习HTML5和CSS3基础知识</div>
+                    <!-- 任务操作按钮区域 -->
+                    <div class="task-actions">
+                        <!-- 编辑任务按钮 -->
+                        <button class="task-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <!-- 删除任务按钮 -->
+                        <button class="task-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </li>
+                
+                <!-- 已完成的任务项示例 -->
+                <li class="task-item completed">
+                    <!-- 已选中的任务复选框 -->
+                    <div class="task-checkbox checked"></div>
+                    <!-- 已完成的任务文本（带删除线） -->
+                    <div class="task-text">完成JavaScript项目</div>
+                    <!-- 任务操作按钮区域 -->
+                    <div class="task-actions">
+                        <!-- 编辑任务按钮 -->
+                        <button class="task-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <!-- 删除任务按钮 -->
+                        <button class="task-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </li>
+                
+                <!-- 其他任务项示例 -->
+                <li class="task-item">
+                    <div class="task-checkbox"></div>
+                    <div class="task-text">设计响应式网页布局</div>
+                    <div class="task-actions">
+                        <button class="task-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="task-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </li>
+                
+                <li class="task-item">
+                    <div class="task-checkbox"></div>
+                    <div class="task-text">练习CSS动画效果</div>
+                    <div class="task-actions">
+                        <button class="task-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="task-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </li>
+            </ul>
+            
+            <!-- 统计信息区域 -->
+            <div class="stats">
+                <!-- 任务总数统计 -->
+                <div class="tasks-count">总任务: <span>4</span></div>
+                <!-- 已完成任务统计 -->
+                <div class="completed-count">已完成: <span>1</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 等待整个HTML文档加载完成后再执行JavaScript代码
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取页面上的各个元素，以便后续操作
+            const taskInput = document.querySelector('.task-input');        // 任务输入框
+            const addBtn = document.querySelector('.add-btn');              // 添加按钮
+            const taskList = document.querySelector('.task-list');          // 任务列表容器
+            const clearBtn = document.querySelector('.clear-btn');          // 清除已完成按钮
+            const filterBtns = document.querySelectorAll('.filter-btn');    // 所有筛选按钮
+            const tasksCount = document.querySelector('.tasks-count span'); // 任务总数显示区域
+            const completedCount = document.querySelector('.completed-count span'); // 已完成数显示区域
+            
+            // 存储所有任务的数组
+            let tasks = [];
+            
+            // 添加新任务的函数
+            function addTask() {
+                // 获取输入框中的文本并去除首尾空格
+                const text = taskInput.value.trim();
+                // 如果文本不为空，则添加任务
+                if (text) {
+                    // 创建任务对象，包含唯一ID、文本内容和完成状态
+                    const task = {
+                        id: Date.now(),        // 使用当前时间戳作为唯一ID
+                        text,                  // 任务文本
+                        completed: false       // 默认未完成
+                    };
+                    
+                    // 将新任务添加到任务数组的开头
+                    tasks.unshift(task);
+                    // 重新渲染任务列表
+                    renderTasks();
+                    // 清空输入框
+                    taskInput.value = '';
+                    // 更新统计信息
+                    updateStats();
+                }
+            }
+            
+            // 渲染任务列表的函数，可选择过滤方式('all', 'active', 'completed')
+            function renderTasks(filter = 'all') {
+                // 清空当前任务列表
+                taskList.innerHTML = '';
+                
+                // 如果没有任务，显示空状态提示
+                if (tasks.length === 0) {
+                    taskList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-tasks"></i>
+                            <p>暂无任务，添加一个吧！</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 根据过滤条件筛选任务
+                const filteredTasks = tasks.filter(task => {
+                    if (filter === 'active') return !task.completed;      // 只显示未完成任务
+                    if (filter === 'completed') return task.completed;    // 只显示已完成任务
+                    return true;  // 显示所有任务
+                });
+                
+                // 遍历筛选后的任务，为每个任务创建HTML元素
+                filteredTasks.forEach(task => {
+                    // 创建任务项元素
+                    const taskItem = document.createElement('li');
+                    // 设置任务项的CSS类名，已完成的任务会加上'completed'类
+                    taskItem.className = `task-item ${task.completed ? 'completed' : ''}`;
+                    // 保存任务ID，便于后续操作
+                    taskItem.dataset.id = task.id;
+                    
+                    // 设置任务项的HTML内容
+                    taskItem.innerHTML = `
+                        <div class="task-checkbox ${task.completed ? 'checked' : ''}"></div>
+                        <div class="task-text">${task.text}</div>
+                        <div class="task-actions">
+                            <button class="task-btn edit-btn"><i class="fas fa-edit"></i></button>
+                            <button class="task-btn delete-btn"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                    
+                    // 将任务项添加到任务列表中
+                    taskList.appendChild(taskItem);
+                    
+                    // 为任务项中的元素添加事件监听器
+                    // 为复选框添加点击事件，用于切换任务完成状态
+                    const checkbox = taskItem.querySelector('.task-checkbox');
+                    checkbox.addEventListener('click', () => toggleTaskComplete(task.id));
+                    
+                    // 为编辑按钮添加点击事件
+                    const editBtn = taskItem.querySelector('.edit-btn');
+                    editBtn.addEventListener('click', () => editTask(task.id));
+                    
+                    // 为删除按钮添加点击事件
+                    const deleteBtn = taskItem.querySelector('.delete-btn');
+                    deleteBtn.addEventListener('click', () => deleteTask(task.id));
+                });
+            }
+            
+            // 切换任务完成状态的函数
+            function toggleTaskComplete(id) {
+                // 遍历所有任务，找到对应ID的任务并切换其完成状态
+                tasks = tasks.map(task => {
+                    if (task.id === id) {
+                        // 使用展开语法创建新对象，并修改completed属性
+                        return {...task, completed: !task.completed};
+                    }
+                    return task;
+                });
+                // 重新渲染任务列表
+                renderTasks();
+                // 更新统计信息
+                updateStats();
+            }
+            
+            // 编辑任务的函数
+            function editTask(id) {
+                // 找到对应ID的任务
+                const task = tasks.find(task => task.id === id);
+                // 弹出提示框让用户输入新任务内容
+                const newText = prompt('编辑任务:', task.text);
+                // 如果用户点击了确定且输入了内容
+                if (newText !== null) {
+                    // 更新任务文本
+                    task.text = newText.trim();
+                    // 重新渲染任务列表
+                    renderTasks();
+                }
+            }
+            
+            // 删除任务的函数
+            function deleteTask(id) {
+                // 弹出确认框询问用户是否确定删除
+                if (confirm('确定要删除这个任务吗？')) {
+                    // 过滤掉要删除的任务，返回新数组
+                    tasks = tasks.filter(task => task.id !== id);
+                    // 重新渲染任务列表
+                    renderTasks();
+                    // 更新统计信息
+                    updateStats();
+                }
+            }
+            
+            // 清除已完成任务的函数
+            function clearCompleted() {
+                // 弹出确认框询问用户是否确定清除
+                if (confirm('确定要清除所有已完成任务吗？')) {
+                    // 过滤掉已完成的任务，只保留未完成的
+                    tasks = tasks.filter(task => !task.completed);
+                    // 重新渲染任务列表
+                    renderTasks();
+                    // 更新统计信息
+                    updateStats();
+                }
+            }
+            
+            // 更新统计信息的函数
+            function updateStats() {
+                // 更新任务总数
+                tasksCount.textContent = tasks.length;
+                // 计算已完成任务数量
+                const completed = tasks.filter(task => task.completed).length;
+                // 更新已完成任务数
+                completedCount.textContent = completed;
+            }
+            
+            // 为页面元素添加事件监听器
+            // 点击添加按钮时添加任务
+            addBtn.addEventListener('click', addTask);
+            // 在输入框按回车键时添加任务
+            taskInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addTask();
+            });
+            
+            // 点击清除已完成按钮时调用清除函数
+            clearBtn.addEventListener('click', clearCompleted);
+            
+            // 为所有筛选按钮添加点击事件
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 移除所有按钮的激活状态
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    // 为当前点击的按钮添加激活状态
+                    btn.classList.add('active');
+                    // 根据按钮文本决定筛选方式并重新渲染
+                    renderTasks(btn.textContent === '待完成' ? 'active' : 
+                                btn.textContent === '已完成' ? 'completed' : 'all');
+                });
+            });
+            
+            // 初始化任务数据
+            tasks = [
+                { id: 1, text: '学习HTML5和CSS3基础知识', completed: false },
+                { id: 2, text: '完成JavaScript项目', completed: true },
+                { id: 3, text: '设计响应式网页布局', completed: false },
+                { id: 4, text: '练习CSS动画效果', completed: false }
+            ];
+            
+            // 初始渲染任务列表
+            renderTasks();
+            // 初始更新统计信息
+            updateStats();
+        });
+    </script>
+</body>
+</html>
