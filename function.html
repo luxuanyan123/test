@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript 函数执行流程分析</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 900px;
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #4A00E0, #8E2DE2);
+            padding: 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .content {
+            display: flex;
+            padding: 0;
+        }
+        
+        .explanation {
+            flex: 1;
+            padding: 30px;
+            background: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .visualization {
+            flex: 1;
+            padding: 30px;
+            background: white;
+        }
+        
+        h2 {
+            color: #4A00E0;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #8E2DE2;
+            padding-bottom: 10px;
+        }
+        
+        .code-block {
+            background: #2c3e50;
+            color: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            margin: 25px 0;
+            position: relative;
+            overflow: hidden;
+            line-height: 1.8;
+        }
+        
+        .code-block::before {
+            content: "JavaScript 代码";
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: #8E2DE2;
+            color: white;
+            font-size: 0.9rem;
+            padding: 5px 15px;
+            border-bottom-right-radius: 8px;
+        }
+        
+        .code-highlight {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        
+        .breakdown {
+            margin: 30px 0;
+        }
+        
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #fff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .step.active {
+            background: #e6f7ff;
+            border-left: 4px solid #4A00E0;
+            transform: translateX(10px);
+        }
+        
+        .step-number {
+            background: #4A00E0;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+            font-size: 1.2rem;
+        }
+        
+        .step-content h3 {
+            color: #4A00E0;
+            margin-bottom: 8px;
+        }
+        
+        .step-content p {
+            line-height: 1.7;
+            color: #555;
+        }
+        
+        .info-box {
+            background: #e8f4ff;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #4A00E0;
+            margin: 25px 0;
+        }
+        
+        .visual-container {
+            background: #f5f7ff;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+        
+        .function-call {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .call-step {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .call-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #4A00E0;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .call-details {
+            flex: 1;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .console {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: monospace;
+            min-height: 150px;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .console-title {
+            color: #4A00E0;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f5f7ff;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .console-line {
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            white-space: pre-wrap;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(90deg, #4A00E0, #8E2DE2);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 200px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(74, 0, 224, 0.3);
+        }
+        
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .variables {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .variable-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .variable-name {
+            font-weight: bold;
+            color: #4A00E0;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .variable-value {
+            font-size: 1.5rem;
+            font-family: monospace;
+            text-align: center;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .return-value {
+            background: #4caf50;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: none;
+        }
+        
+        .return-value.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        footer {
+            background: #2a2a2a;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .explanation {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-code"></i> JavaScript 函数执行流程分析</h1>
+            <p class="subtitle">理解 return 语句如何影响代码执行</p>
+        </header>
+        
+        <div class="content">
+            <div class="explanation">
+                <h2>代码分析</h2>
+                
+                <div class="code-block">
+function add(a, b) {
+    let sum = a + b;
+    return sum;         // 函数在此处结束并返回值
+    console.log(sum);   // 这行代码永远不会执行
+}
+
+console.log(add(2, 3)); // 输出: 5
+                </div>
+                
+                <div class="breakdown">
+                    <div class="step" id="step1">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>函数定义</h3>
+                            <p>创建名为 <code>add</code> 的函数，它接受两个参数 <code>a</code> 和 <code>b</code>。</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step" id="step2">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>函数调用</h3>
+                            <p>执行 <code>add(2, 3)</code>，将值 2 和 3 传递给函数。</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step" id="step3">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>变量计算</h3>
+                            <p>在函数内部，计算 <code>sum = a + b</code> → <code>2 + 3 = 5</code>。</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step" id="step4">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>return 语句执行</h3>
+                            <p>执行 <code>return sum</code>，函数结束并返回值 5。</p>
+                            <p class="highlight"><strong>重要：</strong>return 之后的代码不会执行！</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step" id="step5">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h3>控制台输出</h3>
+                            <p><code>console.log(add(2, 3))</code> 接收返回值 5 并输出到控制台。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h3><i class="fas fa-lightbulb"></i> 关键点</h3>
+                    <ul>
+                        <li><code>return</code> 语句会立即终止函数执行</li>
+                        <li>return 之后的代码永远不会执行</li>
+                        <li>函数调用表达式 <code>add(2,3)</code> 会被替换为返回值（5）</li>
+                        <li>因此 <code>console.log(sum)</code> 永远不会执行</li>
+                        <li>最终控制台只输出一个值：5</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="visualization">
+                <h2>执行过程可视化</h2>
+                
+                <div class="variables">
+                    <div class="variable-card">
+                        <div class="variable-name">参数 a</div>
+                        <div class="variable-value" id="paramA">-</div>
+                    </div>
+                    <div class="variable-card">
+                        <div class="variable-name">参数 b</div>
+                        <div class="variable-value" id="paramB">-</div>
+                    </div>
+                    <div class="variable-card">
+                        <div class="variable-name">变量 sum</div>
+                        <div class="variable-value" id="varSum">-</div>
+                    </div>
+                    <div class="variable-card">
+                        <div class="variable-name">返回值</div>
+                        <div class="variable-value" id="returnValue">-</div>
+                    </div>
+                </div>
+                
+                <div class="function-call">
+                    <div class="call-step">
+                        <div class="call-icon"><i class="fas fa-play"></i></div>
+                        <div class="call-details" id="step1-detail">
+                            准备调用函数: add(2, 3)
+                        </div>
+                    </div>
+                    
+                    <div class="call-step">
+                        <div class="call-icon"><i class="fas fa-arrow-right"></i></div>
+                        <div class="call-details" id="step2-detail">
+                            进入函数体，参数赋值: a=2, b=3
+                        </div>
+                    </div>
+                    
+                    <div class="call-step">
+                        <div class="call-icon"><i class="fas fa-calculator"></i></div>
+                        <div class="call-details" id="step3-detail">
+                            计算 sum = a + b → 2 + 3 = 5
+                        </div>
+                    </div>
+                    
+                    <div class="call-step">
+                        <div class="call-icon"><i class="fas fa-sign-out-alt"></i></div>
+                        <div class="call-details" id="step4-detail">
+                            执行 return sum (返回5)，函数结束
+                        </div>
+                    </div>
+                    
+                    <div class="call-step">
+                        <div class="call-icon"><i class="fas fa-times"></i></div>
+                        <div class="call-details" id="step5-detail">
+                            console.log(sum) 被跳过，不会执行
+                        </div>
+                    </div>
+                    
+                    <div class="call-step">
+                        <div class="call-icon"><i class="fas fa-arrow-left"></i></div>
+                        <div class="call-details" id="step6-detail">
+                            回到调用位置: add(2,3) 被替换为 5
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="return-value" id="returnDisplay">
+                    最终输出: console.log(5)
+                </div>
+                
+                <div class="console">
+                    <div class="console-title">
+                        <i class="fas fa-terminal"></i> 控制台输出
+                    </div>
+                    <div id="consoleOutput">
+                        <!-- 控制台输出将在这里显示 -->
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button id="startBtn">
+                        <i class="fas fa-play"></i> 开始执行
+                    </button>
+                    <button id="stepBtn">
+                        <i class="fas fa-step-forward"></i> 单步执行
+                    </button>
+                    <button id="resetBtn">
+                        <i class="fas fa-redo"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>JavaScript 函数执行流程分析 | 理解 return 语句的工作原理</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startBtn = document.getElementById('startBtn');
+            const stepBtn = document.getElementById('stepBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            // 变量显示元素
+            const paramA = document.getElementById('paramA');
+            const paramB = document.getElementById('paramB');
+            const varSum = document.getElementById('varSum');
+            const returnValue = document.getElementById('returnValue');
+            const consoleOutput = document.getElementById('consoleOutput');
+            const returnDisplay = document.getElementById('returnDisplay');
+            
+            // 步骤详情元素
+            const stepDetails = [
+                document.getElementById('step1-detail'),
+                document.getElementById('step2-detail'),
+                document.getElementById('step3-detail'),
+                document.getElementById('step4-detail'),
+                document.getElementById('step5-detail'),
+                document.getElementById('step6-detail')
+            ];
+            
+            // 步骤元素
+            const steps = [
+                document.getElementById('step1'),
+                document.getElementById('step2'),
+                document.getElementById('step3'),
+                document.getElementById('step4'),
+                document.getElementById('step5')
+            ];
+            
+            let currentStep = 0;
+            let isRunning = false;
+            let intervalId = null;
+            
+            // 重置所有状态
+            function resetExecution() {
+                currentStep = 0;
+                
+                // 重置变量显示
+                paramA.textContent = '-';
+                paramB.textContent = '-';
+                varSum.textContent = '-';
+                returnValue.textContent = '-';
+                
+                // 清空控制台
+                consoleOutput.innerHTML = '';
+                
+                // 隐藏返回值
+                returnDisplay.classList.remove('show');
+                
+                // 重置步骤样式
+                steps.forEach(step => step.classList.remove('active'));
+                stepDetails.forEach(detail => {
+                    detail.style.backgroundColor = 'white';
+                    detail.style.fontWeight = 'normal';
+                });
+                
+                // 启用按钮
+                startBtn.disabled = false;
+                stepBtn.disabled = false;
+                
+                clearInterval(intervalId);
+                isRunning = false;
+            }
+            
+            // 执行下一步
+            function executeNextStep() {
+                if (currentStep >= 6) return;
+                
+                // 高亮当前步骤
+                if (currentStep < 5) {
+                    steps[currentStep].classList.add('active');
+                }
+                
+                stepDetails[currentStep].style.backgroundColor = '#e6f7ff';
+                stepDetails[currentStep].style.fontWeight = 'bold';
+                
+                switch(currentStep) {
+                    case 0: // 函数调用
+                        stepDetails[0].innerHTML = '调用函数: add(2, 3)';
+                        break;
+                    case 1: // 参数赋值
+                        paramA.textContent = '2';
+                        paramB.textContent = '3';
+                        stepDetails[1].innerHTML = '参数赋值完成: a=2, b=3';
+                        break;
+                    case 2: // 计算 sum
+                        varSum.textContent = '5';
+                        stepDetails[2].innerHTML = '计算完成: sum = 2 + 3 = 5';
+                        break;
+                    case 3: // return 语句
+                        returnValue.textContent = '5';
+                        stepDetails[3].innerHTML = '执行 return sum (返回5)，函数立即终止';
+                        break;
+                    case 4: // 跳过 console.log
+                        stepDetails[4].innerHTML = 'return 之后的代码被跳过: console.log(sum) 不会执行';
+                        break;
+                    case 5: // 输出结果
+                        stepDetails[5].innerHTML = '回到调用位置: add(2,3) 被替换为返回值 5';
+                        
+                        // 显示控制台输出
+                        const outputLine = document.createElement('div');
+                        outputLine.className = 'console-line';
+                        outputLine.textContent = '> 5';
+                        consoleOutput.appendChild(outputLine);
+                        
+                        // 显示最终输出
+                        returnDisplay.classList.add('show');
+                        break;
+                }
+                
+                currentStep++;
+                
+                // 如果执行完成，禁用按钮
+                if (currentStep >= 6) {
+                    startBtn.disabled = true;
+                    stepBtn.disabled = true;
+                }
+            }
+            
+            // 开始执行
+            function startExecution() {
+                if (isRunning) return;
+                
+                isRunning = true;
+                startBtn.disabled = true;
+                stepBtn.disabled = true;
+                
+                resetExecution();
+                
+                intervalId = setInterval(() => {
+                    executeNextStep();
+                    
+                    if (currentStep >= 6) {
+                        clearInterval(intervalId);
+                    }
+                }, 1500);
+            }
+            
+            // 事件监听器
+            startBtn.addEventListener('click', startExecution);
+            stepBtn.addEventListener('click', executeNextStep);
+            resetBtn.addEventListener('click', resetExecution);
+            
+            // 初始化
+            resetExecution();
+        });
+    </script>
+</body>
+</html>
